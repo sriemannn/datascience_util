@@ -1,5 +1,6 @@
 from functools import partial, wraps
-
+import pandas as pd
+import polars as pl
 
 
 def do_not_transform_target(func):
@@ -39,11 +40,8 @@ def do_not_transform_target(func):
     def wrapper(
         **kwargs,
     ):
-
         missing_keys = [
-            key
-            for key in ["df_train", "df_test", "target"]
-            if key not in kwargs.keys()
+            key for key in ["df_train", "df_test", "target"] if key not in kwargs.keys()
         ]
 
         if missing_keys:
@@ -57,9 +55,7 @@ def do_not_transform_target(func):
 
         def drop(df, target):
             return (
-                df.drop(columns=[target])
-                if df_type == "pandas"
-                else df.drop([target])
+                df.drop(columns=[target]) if df_type == "pandas" else df.drop([target])
             )
 
         y_train = df_train[target]
@@ -82,11 +78,7 @@ def do_not_transform_target(func):
             else partial(pl.concat, how="horizontal")
         )
 
-        df_test = (
-            concat_fun([X_test, y_test])
-            if target in df_test.columns
-            else X_test
-        )
+        df_test = concat_fun([X_test, y_test]) if target in df_test.columns else X_test
         df_train = concat_fun([X_train, y_train])
 
         return df_train, df_test
