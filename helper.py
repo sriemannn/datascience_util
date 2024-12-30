@@ -1,8 +1,9 @@
-from functools import partial, wraps
+from functools import wraps
 import pandas as pd
-import polars as pl
 import numpy as np
 import matplotlib.colors as mc
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def do_not_transform_target(func):
@@ -53,19 +54,12 @@ def do_not_transform_target(func):
         df_test = kwargs["df_test"]
         target = kwargs["target"]
 
-        df_type = "pandas" if isinstance(df_train, pd.DataFrame) else "polars"
-
-        def drop(df, target):
-            return (
-                df.drop(columns=[target]) if df_type == "pandas" else df.drop([target])
-            )
-
         y_train = df_train[target]
-        X_train = drop(df_train, target)
+        X_train = df_train.drop(columns=[target])
 
         if target in df_test.columns:
             y_test = df_test[target]
-            X_test = drop(df_test, target)
+            X_test = df_test.drop(columns=[target])
         else:
             X_test = df_test
 
@@ -74,14 +68,10 @@ def do_not_transform_target(func):
 
         X_train, X_test = func(**kwargs)
 
-        concat_fun = (
-            partial(pd.concat, axis=1)
-            if df_type == "pandas"
-            else partial(pl.concat, how="horizontal")
+        df_test = (
+            pd.concat([X_test, y_test], axis=1) if target in df_test.columns else X_test
         )
-
-        df_test = concat_fun([X_test, y_test]) if target in df_test.columns else X_test
-        df_train = concat_fun([X_train, y_train])
+        df_train = pd.concat([X_train, y_train], axis=1)
 
         return df_train, df_test
 
@@ -138,8 +128,33 @@ def match_col_levels(
     outliers_in_df1 = get_outliers(df1, df2, common_cols)
     outliers_in_df2 = get_outliers(df2, df1, common_cols)
 
-    outliers_in_df1 = outliers_in_df1[common_cols]
-    outliers_in_df2 = outliers_in_df2[common_cols]
-
     # Concatenate all outliers into a single dataframe
     return outliers_in_df1, outliers_in_df2
+
+
+def plot_missing_values(train, test):
+    """
+    Plot all missing values in the train and test sets.
+
+    Parameters
+    ----------
+    train : pd.DataFrame
+        Input DataFrame for training.
+    test : pd.DataFrame
+        Input DataFrame for testing.
+
+
+    Returns
+    -------
+    None
+    """
+
+    _, ax = plt.subplots(1, 2, figsize=(9, 3))
+
+    sns.heatmap(train.isna(), ax=ax[0], cmap="viridis", cbar=False)
+    ax[0].set_title("Missing values in train set")
+
+    sns.heatmap(test.isna(), ax=ax[1], cmap="viridis", cbar=False)
+    _ = ax[1].set_title("Missing values in test set")
+
+    plt.show()
