@@ -1,8 +1,9 @@
 from functools import wraps
-import pandas as pd
-import numpy as np
+
 import matplotlib.colors as mc
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
 
 
@@ -44,7 +45,9 @@ def do_not_transform_target(func):
         **kwargs,
     ):
         missing_keys = [
-            key for key in ["df_train", "df_test", "target"] if key not in kwargs.keys()
+            key
+            for key in ["df_train", "df_test", "target"]
+            if key not in kwargs.keys()
         ]
 
         if missing_keys:
@@ -69,7 +72,9 @@ def do_not_transform_target(func):
         X_train, X_test = func(**kwargs)
 
         df_test = (
-            pd.concat([X_test, y_test], axis=1) if target in df_test.columns else X_test
+            pd.concat([X_test, y_test], axis=1)
+            if target in df_test.columns
+            else X_test
         )
         df_train = pd.concat([X_train, y_train], axis=1)
 
@@ -120,9 +125,13 @@ def match_col_levels(
         df1 = df1.iloc[rows, :]
         neg_mask_df = neg_mask_df.iloc[rows, :]
 
-        colors = mc.LinearSegmentedColormap.from_list("custom", ["#FF0000", "#FFFFFF"])
+        colors = mc.LinearSegmentedColormap.from_list(
+            "custom", ["#FF0000", "#FFFFFF"]
+        )
 
-        return df1.style.background_gradient(axis=None, gmap=mask_df, cmap=colors)
+        return df1.style.background_gradient(
+            axis=None, gmap=mask_df, cmap=colors
+        )
 
     # Filter out the outlier rows
     outliers_in_df1 = get_outliers(df1, df2, common_cols)
@@ -158,6 +167,7 @@ def plot_missing_values(train, test):
     _ = ax[1].set_title("Missing values in test set")
 
     plt.show()
+
 
 def ordinal_encoder(col: pd.Series, mapping: dict | None = None) -> pd.Series:
     """
@@ -205,3 +215,33 @@ def one_hot_encoder(
         cols = [cols]
 
     return pd.get_dummies(df, columns=cols, drop_first=drop_first, dtype=int)
+
+
+def target_window(
+    data: pd.DataFrame, target: str, window: int = 3, dropna=True
+):
+    """
+    Shift the target variable by a given window size for time series analysis
+
+    Parameters:
+    -----------
+    data : pd.DataFrame
+        The data to shift.
+    target : str
+        The target variable to shift.
+    window : int, default=3
+        The window size.
+
+    Returns:
+    --------
+    pd.DataFrame : The shifted data.
+    """
+    shifts = [data[target].shift(i) for i in range(1, window + 1)]
+    col_names = (f"{target}_t-{i}" for i in range(1, window + 1))
+
+    data = data.assign(**dict(zip(col_names, shifts)))
+
+    if dropna:
+        return data.dropna()
+
+    return data
