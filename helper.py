@@ -33,7 +33,19 @@ def do_not_transform_target(func):
     KeyError
         If any of the keyword arguments (`df_train`, `df_test`, `target`) are missing.
 
+    
+    Examples
+    --------
+    :: 
 
+      @do_not_transform_target
+      def some_processing_function(df_train, df_test, target):
+
+        ...
+
+        return df_train, df_test
+
+      some_processing_function(df_train=df_train, df_test=df_test, target=target)
     """
 
     @wraps(func)
