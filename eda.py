@@ -1,8 +1,9 @@
 import pandas as pd
 import seaborn as sns
-imort matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import matplotlib.colors as mc
 import numpy as np
+
 
 def match_col_levels(
     df1: pd.DataFrame, df2: pd.DataFrame
@@ -46,13 +47,9 @@ def match_col_levels(
         df1 = df1.iloc[rows, :]
         neg_mask_df = neg_mask_df.iloc[rows, :]
 
-        colors = mc.LinearSegmentedColormap.from_list(
-            "custom", ["#FF0000", "#FFFFFF"]
-        )
+        colors = mc.LinearSegmentedColormap.from_list("custom", ["#FF0000", "#FFFFFF"])
 
-        return df1.style.background_gradient(
-            axis=None, gmap=mask_df, cmap=colors
-        )
+        return df1.style.background_gradient(axis=None, gmap=mask_df, cmap=colors)
 
     # Filter out the outlier rows
     outliers_in_df1 = get_outliers(df1, df2, common_cols)
